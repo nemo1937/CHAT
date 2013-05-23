@@ -32,7 +32,6 @@ bool server(const char *ip, unsigned int port)
 	//listen
 	listen(server_sock, 5);
 
-	char ch[20] = {0};
 	int client_sock;
 	struct sockaddr_in client_addr;
 	memset(&client_addr, 0x00, sizeof(client_addr));
@@ -41,20 +40,29 @@ bool server(const char *ip, unsigned int port)
 
 	while(1)
 	{
-		memset(ch, 0x00, sizeof(ch));
-
 		cout << "server wait" << endl;
 		//accept
 		client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &len);
 
-		int len_read = 0;
-		while (len_read = read(client_sock, &ch, 20) > 0)
+		char ch[20];
+		memset(ch, 0x00, sizeof(ch));
+
+		//int len_read = 0;
+	//	while ((len_read = read(client_sock, &ch, 20)) > 0)
+		ssize_t recv_len = -1;
+		while ((recv_len = recv(client_sock, &ch, 20, 0)) > 0)
 		{
-			cout << "from client ch: " << ch << endl;
-			char response[20] = {0};
-			gets(response);
+			cout << "client: " << ch ;
+			fflush(stdout);
+
+			char response[20];
+			memset(response, 0x00, sizeof(response));
+
+			cout << "server: ";
+			fgets(response, sizeof(response), stdin);
 			
-			write(client_sock, &response, 20);
+			send(client_sock, &response, 20, 0);
+			memset(ch, 0x00, sizeof(ch));
 		}
 
 		close(client_sock);

@@ -7,7 +7,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
-
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+    
 using namespace std;
 
 bool client(const char *ip, const unsigned int port)
@@ -28,26 +31,34 @@ bool client(const char *ip, const unsigned int port)
 
 	bzero(&(client_addr.sin_zero), 8);
 
+	// set socket to O_NONBLOCK
+	int flags = fcntl(client_sock, F_GETFL, 0);
+	fcntl(client_sock, F_SETFL, flags | O_NONBLOCK);
 
 	int rt = connect(client_sock, (struct sockaddr *)&client_addr, sizeof(client_addr));
 	if (rt == -1)
 	{
-		return false;
+		if (errno != EINPROGRESS)
+			return false;
 	}
 	
 	while (1)
 	{
-		char cs[20] = {0};
-		gets(cs);
+		char cs[20];
+		memset(cs, 0x00, sizeof(cs));
+
+		cout << "client: ";
+		fgets(cs, sizeof(cs), stdin);
 
 		write(client_sock, cs, strlen(cs));
+
+		memset(cs, 0x00, sizeof(cs));
 		read(client_sock, cs, 20);
 
-		cout << "from server char ch: " << cs << endl;
+		cout << "server: " << cs;
 	}
 	//close
 	close(client_sock);
-
 
 	return true;
 }
